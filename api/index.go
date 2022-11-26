@@ -86,17 +86,37 @@ func Main(w http.ResponseWriter, r *http.Request) {
 	var token = r.URL.Query().Get("token")
 	var isCors = r.URL.Query().Get("cors") == "true"
 
+	w.Header().Set("Content-Type", "application/json")
 	if isCors {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 	}
 
 	if token != os.Getenv("API_TOKEN") {
 		w.WriteHeader(401)
-		fmt.Fprintf(w, "wrong token")
+		fmt.Fprintf(w, "\"wrong token\"")
 		return
 	}
 
 	var hedgehogs = getAllHedgehogs()
+
+	if strings.HasPrefix(r.URL.Path, "/api/hedgehog") {
+		var idString = strings.Replace(r.URL.Path, "/api/hedgehog/", "", 1)
+
+		id, err := strconv.Atoi(idString)
+		if err != nil {
+			fmt.Println(id)
+			w.WriteHeader(404)
+			fmt.Fprint(w, "\"not found\"")
+			return
+		}
+
+		var response, stringifyError = json.Marshal(hedgehogs[id])
+		if stringifyError != nil {
+			fmt.Println(stringifyError)
+		}
+
+		fmt.Fprint(w, string(response))
+	}
 
 	var limitString = r.URL.Query().Get("limit")
 	var offsetString = r.URL.Query().Get("offset")
@@ -117,13 +137,5 @@ func Main(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(stringifyError)
 	}
 
-	w.Header().Set("Content-Type", "application/json")
 	fmt.Fprint(w, string(response))
 }
-
-// const PATH_URL = '/.netlify/functions/api/hedgehog/';
-//   if (path.startsWith(PATH_URL)) {
-//     const id = Number(path.replace(PATH_URL, '')) - 1;
-
-//     return hedgehogs[id] ? getResponse(200, hedgehogs[id], isCors) : getResponse(404, { result: 'not found' }, isCors);
-//   }
