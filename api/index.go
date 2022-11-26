@@ -103,19 +103,20 @@ func Main(w http.ResponseWriter, r *http.Request) {
 		var idString = strings.Replace(r.URL.Path, "/api/hedgehog/", "", 1)
 
 		id, err := strconv.Atoi(idString)
-		if err != nil {
+		if err != nil || len(hedgehogs) < id {
 			fmt.Println(id)
 			w.WriteHeader(404)
 			fmt.Fprint(w, "\"not found\"")
 			return
 		}
 
-		var response, stringifyError = json.Marshal(hedgehogs[id])
+		var response, stringifyError = json.Marshal(hedgehogs[id-1])
 		if stringifyError != nil {
 			fmt.Println(stringifyError)
 		}
 
 		fmt.Fprint(w, string(response))
+		return
 	}
 
 	var limitString = r.URL.Query().Get("limit")
