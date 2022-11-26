@@ -120,3 +120,10 @@ func Main(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	fmt.Fprint(w, string(response))
 }
+
+// const PATH_URL = '/.netlify/functions/api/hedgehog/';
+//   if (path.startsWith(PATH_URL)) {
+//     const id = Number(path.replace(PATH_URL, '')) - 1;
+
+//     return hedgehogs[id] ? getResponse(200, hedgehogs[id], isCors) : getResponse(404, { result: 'not found' }, isCors);
+//   }
