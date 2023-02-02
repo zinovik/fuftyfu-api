@@ -20,7 +20,7 @@ type Data struct {
 type Hedgehog struct {
 	Id          int        `json:"id"`
 	When        string     `json:"when"`
-	Photo       string     `json:"photo"`
+	Photos      [2]string  `json:"photos"`
 	Who         Data       `json:"who"`
 	Country     Data       `json:"country"`
 	Place       Data       `json:"place"`
