@@ -1,5 +1,4 @@
-// /api/index.go
-package handler
+package fuftyfy_api
 
 import (
 	"encoding/json"
@@ -10,6 +9,8 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/GoogleCloudPlatform/functions-framework-go/functions"
 )
 
 type Data struct {
@@ -82,7 +83,11 @@ func getResponse(hedgehogs []Hedgehog, limit, offset int, filter string) Respons
 	return response
 }
 
-func Main(w http.ResponseWriter, r *http.Request) {
+func init() {
+	functions.HTTP("main", main)
+}
+
+func main(w http.ResponseWriter, r *http.Request) {
 	var token = r.URL.Query().Get("token")
 	var isCors = r.URL.Query().Get("cors") == "true"
 
