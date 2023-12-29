@@ -35,7 +35,7 @@ type Response struct {
 	Hedgehogs []Hedgehog `json:"hedgehogs"`
 }
 
-const JSON_URL = "https://raw.githubusercontent.com/zinovik/fuftyfu-data/main/hedgehogs.json"
+const JSON_URL = "https://storage.googleapis.com/hedgehogs/hedgehogs.json"
 
 func getAllHedgehogs() []Hedgehog {
 	response, err := http.Get(JSON_URL)
