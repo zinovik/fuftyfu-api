@@ -1,9 +1,11 @@
 package fuftyfy_api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"math"
 	"net/http"
 	"os"
@@ -11,6 +13,8 @@ import (
 	"strings"
 
 	"github.com/GoogleCloudPlatform/functions-framework-go/functions"
+
+	"cloud.google.com/go/storage"
 )
 
 type Data struct {
@@ -35,17 +39,26 @@ type Response struct {
 	Hedgehogs []Hedgehog `json:"hedgehogs"`
 }
 
-const JSON_URL = "https://storage.googleapis.com/hedgehogs/hedgehogs.json"
+const BUCKET = "hedgehogs"
+const FILE = "hedgehogs.json"
 
 func getAllHedgehogs() []Hedgehog {
-	response, err := http.Get(JSON_URL)
+	ctx := context.Background()
+
+	client, err := storage.NewClient(ctx)
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 	}
 
-	body, err := io.ReadAll(response.Body)
+	rc, err := client.Bucket(BUCKET).Object(FILE).NewReader(ctx)
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
+	}
+	defer rc.Close()
+
+	body, err := io.ReadAll(rc)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	var hedgehogs []Hedgehog
