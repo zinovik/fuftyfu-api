@@ -15,8 +15,6 @@ jobs:
         run: rm key-file.json
       - name: Save environment variables to yaml
         run: echo "${{ secrets.ENV }}" | base64 -d >> env.yaml
-      - name: Save environment variables to yaml
-        run: echo "${{ secrets.ENV }}" | base64 -d >> env.yaml
       - name: Deploy
         run: ./deploy.sh
       - name: Remove env.yaml
