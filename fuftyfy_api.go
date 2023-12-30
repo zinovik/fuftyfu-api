@@ -101,6 +101,8 @@ func init() {
 }
 
 func main(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Triggered!")
+
 	var token = r.URL.Query().Get("token")
 	var isCors = r.URL.Query().Get("cors") == "true"
 
@@ -157,4 +159,6 @@ func main(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Fprint(w, string(response))
+
+	fmt.Println("Done!")
 }
