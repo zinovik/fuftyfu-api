@@ -7,4 +7,4 @@ gcloud functions deploy fuftyfu-api \
     --source=. \
     --allow-unauthenticated \
     --project zinovik-project \
-     --env-vars-file env.yaml
+    --set-secrets=TOKEN=fuftyfy-api-app-token:latest

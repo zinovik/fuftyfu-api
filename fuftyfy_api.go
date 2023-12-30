@@ -96,7 +96,7 @@ func main(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 	}
 
-	if token != os.Getenv("API_TOKEN") {
+	if token != os.Getenv("TOKEN") {
 		w.WriteHeader(401)
 		fmt.Fprintf(w, "\"wrong token\"")
 		return
