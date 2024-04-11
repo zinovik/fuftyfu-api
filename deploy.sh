@@ -3,7 +3,7 @@ gcloud functions deploy fuftyfu-api \
     --trigger-http \
     --runtime=go121 \
     --entry-point=main \
-    --region=us-central1 \
+    --region=europe-central2 \
     --source=. \
     --allow-unauthenticated \
     --project zinovik-project \

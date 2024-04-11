@@ -30,5 +30,5 @@ gcloud projects add-iam-policy-binding zinovik-project --member="serviceAccount:
 ### add secrets
 
 ```
-printf "TOKEN" | gcloud secrets create fuftyfy-api-app-token --locations=us-central1 --replication-policy="user-managed" --data-file=-
+printf "TOKEN" | gcloud secrets create fuftyfy-api-app-token --locations=europe-central2 --replication-policy="user-managed" --data-file=-
 ```
