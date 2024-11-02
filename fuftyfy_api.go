@@ -64,6 +64,10 @@ func getAllHedgehogs() []Hedgehog {
 	var hedgehogs []Hedgehog
 	json.Unmarshal(body, &hedgehogs)
 
+	for i, j := 0, len(hedgehogs)-1; i < j; i, j = i+1, j-1 {
+		hedgehogs[i], hedgehogs[j] = hedgehogs[j], hedgehogs[i]
+	}
+
 	return hedgehogs
 }
 
