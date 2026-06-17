@@ -11,9 +11,12 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/GoogleCloudPlatform/functions-framework-go/functions"
 
+	"cloud.google.com/go/compute/metadata"
 	"cloud.google.com/go/storage"
 )
 
@@ -42,14 +45,63 @@ type Response struct {
 const BUCKET = "hedgehogs"
 const FILE = "hedgehogs.json"
 
-func getAllHedgehogs() []Hedgehog {
-	ctx := context.Background()
+var (
+	storageClient *storage.Client
+	clientOnce    sync.Once
+	clientErr     error
+)
 
-	client, err := storage.NewClient(ctx)
-	if err != nil {
-		log.Fatal(err)
+func getStorageClient() (*storage.Client, error) {
+	clientOnce.Do(func() {
+		storageClient, clientErr = storage.NewClient(context.Background())
+	})
+	return storageClient, clientErr
+}
+
+func parseGCSURL(rawURL string) (string, string, bool) {
+	if strings.HasPrefix(rawURL, "https://storage.googleapis.com/") {
+		trimmed := strings.TrimPrefix(rawURL, "https://storage.googleapis.com/")
+		parts := strings.SplitN(trimmed, "/", 2)
+		if len(parts) == 2 {
+			return parts[0], parts[1], true
+		}
+	} else if strings.HasPrefix(rawURL, "gs://") {
+		trimmed := strings.TrimPrefix(rawURL, "gs://")
+		parts := strings.SplitN(trimmed, "/", 2)
+		if len(parts) == 2 {
+			return parts[0], parts[1], true
+		}
 	}
+	return "", "", false
+}
 
+func signHedgehogPhotos(ctx context.Context, client *storage.Client, h *Hedgehog, saEmail string) {
+	for i, photoURL := range h.Photos {
+		if photoURL == "" {
+			continue
+		}
+		bucket, object, ok := parseGCSURL(photoURL)
+		if !ok {
+			continue
+		}
+		opts := &storage.SignedURLOptions{
+			Scheme:  storage.SigningSchemeV4,
+			Method:  "GET",
+			Expires: time.Now().Add(15 * time.Minute),
+		}
+		if saEmail != "" {
+			opts.GoogleAccessID = saEmail
+		}
+		signedURL, err := client.Bucket(bucket).SignedURL(object, opts)
+		if err != nil {
+			log.Printf("Failed to generate signed URL for %s: %v", photoURL, err)
+			continue
+		}
+		h.Photos[i] = signedURL
+	}
+}
+
+func getAllHedgehogs(ctx context.Context, client *storage.Client) []Hedgehog {
 	rc, err := client.Bucket(BUCKET).Object(FILE).NewReader(ctx)
 	if err != nil {
 		log.Fatal(err)
@@ -121,7 +173,18 @@ func main(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var hedgehogs = getAllHedgehogs()
+	client, err := getStorageClient()
+	if err != nil {
+		log.Printf("Failed to get storage client: %v", err)
+		w.WriteHeader(500)
+		fmt.Fprint(w, "\"internal server error\"")
+		return
+	}
+
+	var hedgehogs = getAllHedgehogs(r.Context(), client)
+
+	// Fetch service account email from metadata (if running on GCF) for signing.
+	saEmail, _ := metadata.Email("default")
 
 	if strings.HasPrefix(r.URL.Path, "/api/hedgehog") {
 		var idString = strings.Replace(r.URL.Path, "/api/hedgehog/", "", 1)
@@ -134,7 +197,10 @@ func main(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		var response, stringifyError = json.Marshal(hedgehogs[id-1])
+		hedgehog := hedgehogs[id-1]
+		signHedgehogPhotos(r.Context(), client, &hedgehog, saEmail)
+
+		var response, stringifyError = json.Marshal(hedgehog)
 		if stringifyError != nil {
 			fmt.Println(stringifyError)
 		}
@@ -156,6 +222,11 @@ func main(w http.ResponseWriter, r *http.Request) {
 		offset = 0
 	}
 	var responseObj = getResponse(hedgehogs, limit, offset, filter)
+
+	// Sign photos only for the hedgehogs being returned in the response page.
+	for i := range responseObj.Hedgehogs {
+		signHedgehogPhotos(r.Context(), client, &responseObj.Hedgehogs[i], saEmail)
+	}
 
 	var response, stringifyError = json.Marshal(responseObj)
 	if stringifyError != nil {

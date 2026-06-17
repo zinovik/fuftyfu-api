@@ -1,7 +1,7 @@
 gcloud functions deploy fuftyfu-api \
     --gen2 \
     --trigger-http \
-    --runtime=go121 \
+    --runtime=go126 \
     --entry-point=main \
     --region=europe-central2 \
     --source=. \
